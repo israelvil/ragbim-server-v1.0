@@ -7,9 +7,12 @@ from functools import wraps
 
 from flask import Flask, jsonify, render_template, request
 
-from ragbim_ai.license_token import issue_activation_token
 from .store import ControlStore
 
+import secrets
+
+def issue_activation_token(installation_code: str, machine_fingerprint: str) -> str:
+    return secrets.token_urlsafe(32)
 
 app = Flask(__name__)
 STORE = ControlStore()
