@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Setup do SDK de Licenciamento</title>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; background: #f4f1ea; margin: 0; color: #1f2937; }
+    main { width: min(760px, calc(100vw - 32px)); margin: 0 auto; padding: 36px 0 44px; }
+    .panel { background: #fff; border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 20px; padding: 24px; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08); }
+    .grid { display: grid; gap: 12px; margin-top: 16px; }
+    label { display: grid; gap: 6px; font-size: 0.92rem; }
+    input, button { font: inherit; }
+    input { width: 100%; border-radius: 12px; border: 1px solid rgba(15, 23, 42, 0.12); padding: 11px 12px; }
+    button { margin-top: 8px; border: 0; border-radius: 999px; padding: 11px 18px; font-weight: 700; cursor: pointer; background: #0f766e; color: #fff; }
+    .status { min-height: 1.2em; color: #6b7280; margin-top: 10px; }
+    .alert { margin-top: 8px; color: #b91c1c; font-size: 0.92rem; }
+    .hint { color: #6b7280; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="panel">
+      <h1>Setup inicial do SDK de Licenciamento</h1>
+      <p class="hint">Nenhum administrador foi encontrado. Crie o primeiro usuário admin para liberar o painel de gestão de licenças.</p>
+      <p class="hint">Configure a variável de ambiente <strong>{{ bootstrap_key_env }}</strong> no servidor e informe essa chave abaixo.</p>
+
+      <div class="grid">
+        <label><span>Chave de bootstrap</span><input id="bootstrapKeyField" type="password"></label>
+        <label><span>Nome do administrador</span><input id="adminNameField" type="text" value="Administrador SDK"></label>
+        <label><span>Email do administrador</span><input id="adminEmailField" type="email"></label>
+        <label><span>Senha do administrador</span><input id="adminPasswordField" type="password"></label>
+      </div>
+
+      <button id="createAdminButton" type="button">Criar administrador inicial</button>
+      <p class="status" id="setupStatus"></p>
+      <p class="alert" id="setupError"></p>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const bootstrapKeyField = document.getElementById('bootstrapKeyField');
+      const adminNameField = document.getElementById('adminNameField');
+      const adminEmailField = document.getElementById('adminEmailField');
+      const adminPasswordField = document.getElementById('adminPasswordField');
+      const createAdminButton = document.getElementById('createAdminButton');
+      const setupStatus = document.getElementById('setupStatus');
+      const setupError = document.getElementById('setupError');
+
+      function setStatus(message) { setupStatus.textContent = message || ''; }
+      function setError(message) { setupError.textContent = message || ''; }
+
+      createAdminButton.addEventListener('click', function () {
+        setError('');
+        setStatus('Criando administrador...');
+        createAdminButton.disabled = true;
+
+        fetch('/api/bootstrap/admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bootstrap_key: bootstrapKeyField.value || '',
+            name: adminNameField.value || '',
+            email: adminEmailField.value || '',
+            password: adminPasswordField.value || ''
+          })
+        })
+          .then(function (response) {
+            return response.json().then(function (data) {
+              if (!response.ok) throw new Error(data.error || 'Falha no bootstrap');
+              return data;
+            });
+          })
+          .then(function () {
+            setStatus('Administrador criado com sucesso. Redirecionando para o painel...');
+            window.setTimeout(function () { window.location.href = '/admin'; }, 700);
+          })
+          .catch(function (error) {
+            setError(error.message);
+            setStatus('');
+          })
+          .finally(function () {
+            createAdminButton.disabled = false;
+          });
+      });
+    })();
+  </script>
+</body>
+</html>
